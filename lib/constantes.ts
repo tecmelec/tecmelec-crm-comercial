@@ -35,3 +35,16 @@ export const PRIO_COLOR: Record<string, string> = {
   P1: "bg-orange-200 text-orange-900", P2: "bg-yellow-200 text-yellow-900", P3: "bg-green-100 text-green-900", Fuera: "bg-slate-200 text-slate-700",
 };
 export const OBJETIVO_MEUR = 20;
+
+/** Estados de seguimiento usados por el equipo (Excel BDD Contactos Obras). */
+export const ESTADOS_SEGUIMIENTO = [
+  "Nos interesa (especial atención)", "Agendar llamada", "Envío de correo", "Las lleva JC",
+  "No se ha hecho pública la contratista", "No hay suficiente información", "Proceso finalizado",
+];
+/** Estado de la documentación del proyecto (planos/mediciones para ofertar). */
+export const ESTADOS_DOC = ["Pendiente", "Entregada", "Aplazada", "Descartada"];
+export const DOC_COLOR: Record<string, string> = {
+  Pendiente: "bg-yellow-100 text-yellow-900", Entregada: "bg-green-100 text-green-900",
+  Aplazada: "bg-blue-100 text-blue-900", Descartada: "bg-slate-200 text-slate-700",
+};
+export const ORIGENES = ["Investigación plan comercial", "BDD Contactos Obras", "Investigación plan comercial + BDD Contactos Obras", "Licitación pública", "Otro"];

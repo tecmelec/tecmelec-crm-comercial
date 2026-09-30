@@ -27,6 +27,8 @@ export default function EmpresaEditor({ empresa, contactos }: { empresa: any; co
         <div><label className="lbl">Nombre</label><input className="inp" value={e.nombre ?? ""} onChange={(x) => set("nombre", x.target.value)} /></div>
         <div><label className="lbl">Tipo</label><select className="inp" value={e.tipo} onChange={(x) => set("tipo", x.target.value)}>{TIPOS_EMPRESA.map((t) => <option key={t}>{t}</option>)}</select></div>
         <div><label className="lbl">Ciudad</label><input className="inp" value={e.ciudad ?? ""} onChange={(x) => set("ciudad", x.target.value)} /></div>
+        <div><label className="lbl">Teléfono general</label><input className="inp" value={e.telefono ?? ""} onChange={(x) => set("telefono", x.target.value)} /></div>
+        <div><label className="lbl">Email general</label><input className="inp" value={e.email ?? ""} onChange={(x) => set("email", x.target.value)} /></div>
         <div><label className="lbl">Web</label><input className="inp" value={e.web ?? ""} onChange={(x) => set("web", x.target.value)} /></div>
         {[["subtipo", "Descripción"], ["obras_vinculadas", "Obras vinculadas"], ["cargos_objetivo", "Cargos a contactar"], ["estrategia", "Estrategia de entrada"]].map(([k, n]) => (
           <div key={k} className="md:col-span-2"><label className="lbl">{n}</label><input className="inp" value={e[k] ?? ""} onChange={(x) => set(k, x.target.value)} /></div>

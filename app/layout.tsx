@@ -11,6 +11,7 @@ const NAV = [
   { href: "/oportunidades", n: "Oportunidades" },
   { href: "/registrar", n: "+ Registrar" },
   { href: "/empresas", n: "Empresas" },
+  { href: "/contactos", n: "Contactos" },
   { href: "/licitaciones", n: "Licitaciones" },
   { href: "/plan", n: "Plan semanal" },
 ];

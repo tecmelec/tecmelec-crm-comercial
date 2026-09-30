@@ -37,8 +37,11 @@ export default function ActividadForm({ oportunidadId, empresaId, opps, contacto
       tipo, resumen, nuevo_contacto: nuevo, siguiente_paso: sig || null, fecha_siguiente: fsig || null, foto_path,
     });
     if (error) { setEstado("Error: " + error.message); return; }
-    if (oppId && actualizarOpp && (sig || fsig)) {
-      await sb.from("crm_oportunidades").update({ proxima_accion: sig || null, fecha_proxima_accion: fsig || null }).eq("id", oppId);
+    if (oppId) {
+      const upd: Record<string, any> = {};
+      if (tipo !== "nota") upd.fecha_ultimo_contacto = new Date().toISOString().slice(0, 10);
+      if (actualizarOpp && (sig || fsig)) { upd.proxima_accion = sig || null; upd.fecha_proxima_accion = fsig || null; }
+      if (Object.keys(upd).length) await sb.from("crm_oportunidades").update(upd).eq("id", oppId);
     }
     setResumen(""); setSig(""); setFsig(""); setNuevo(false); setFoto(null); setContactoId("");
     setEstado("Registrado ✔");

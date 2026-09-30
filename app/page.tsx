@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSesion } from "@/lib/supabase/server";
 import SinAcceso from "@/components/SinAcceso";
-import { ETAPAS, etapaNombre, OBJETIVO_MEUR, PRIO_COLOR } from "@/lib/constantes";
+import { ETAPAS, etapaNombre, OBJETIVO_MEUR, PRIO_COLOR, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, DOC_COLOR } from "@/lib/constantes";
 import { meur, fecha } from "@/lib/format";
 import { inicioSemana, isoDia } from "@/lib/semana";
 
@@ -15,7 +15,7 @@ export default async function Panel() {
   const lunes = inicioSemana();
   const hoy = isoDia(new Date());
   const [{ data: opps }, { data: acts }, { data: plan }, { count: licNuevas }, { data: usuarios }] = await Promise.all([
-    sb.from("crm_oportunidades").select("id,codigo,proyecto,prioridad,etapa,potencial_meur,importe_ofertado_meur,prob_adjudicacion,importe_contratado_meur,fecha_proxima_accion,proxima_accion,responsable_id,fecha_firma,fecha_est_adjudicacion"),
+    sb.from("crm_oportunidades").select("id,codigo,proyecto,prioridad,etapa,potencial_meur,importe_ofertado_meur,prob_adjudicacion,importe_contratado_meur,fecha_proxima_accion,proxima_accion,responsable_id,fecha_firma,fecha_est_adjudicacion,estado_seguimiento,estado_documentacion"),
     sb.from("crm_actividades").select("tipo,nuevo_contacto,usuario_id,fecha").gte("fecha", lunes.toISOString()),
     sb.from("crm_plan_semanal").select("*").lte("inicio", hoy).gte("fin", hoy).maybeSingle(),
     sb.from("crm_licitaciones").select("id", { count: "exact", head: true }).eq("estado", "nueva"),
@@ -44,10 +44,13 @@ export default async function Panel() {
     { k: "Ofertas presentadas", real: cuenta((a) => a.tipo === "oferta"), obj: plan?.ofertas },
     { k: "Llamadas", real: cuenta((a) => a.tipo === "llamada"), obj: 33 },
   ];
-  const vencidas = O.filter((o) => o.fecha_proxima_accion && o.fecha_proxima_accion <= hoy && !["9", "X", "Z", "0"].includes(o.etapa))
+  const vencidas = O.filter((o) => o.fecha_proxima_accion && o.fecha_proxima_accion <= hoy && !["9", "X", "Z"].includes(o.etapa))
     .sort((a, b) => (a.fecha_proxima_accion! < b.fecha_proxima_accion! ? -1 : 1));
   const porEtapa = ETAPAS.map((e) => ({ ...e, cnt: O.filter((o) => o.etapa === e.v).length, imp: O.filter((o) => o.etapa === e.v).reduce((s, o) => s + Number(o.importe_ofertado_meur ?? o.potencial_meur ?? 0), 0) }));
   const maxN = Math.max(1, ...porEtapa.map((e) => e.cnt));
+  const abiertas = O.filter((o) => !["9", "X", "Z"].includes(o.etapa));
+  const porSeg = ESTADOS_SEGUIMIENTO.map((k) => ({ k, n: abiertas.filter((o) => o.estado_seguimiento === k).length })).filter((x) => x.n > 0);
+  const porDoc = ESTADOS_DOC.map((k) => ({ k, n: O.filter((o) => o.estado_documentacion === k).length })).filter((x) => x.n > 0);
 
   return (
     <div className="space-y-4">
@@ -91,11 +94,21 @@ export default async function Panel() {
         </div>
       </div>
       <div className="card">
-        <h2 className="mb-2 font-bold text-navy">Próximas acciones vencidas o de hoy ({vencidas.length})</h2>
+        <h2 className="mb-2 font-bold text-navy">Seguimiento de obras abiertas ({abiertas.length})</h2>
+        <div className="flex flex-wrap gap-2 text-sm">
+          {porSeg.map((x) => <Link key={x.k} href={`/oportunidades?seg=${encodeURIComponent(x.k)}`} className="badge bg-indigo-50 text-indigo-900 hover:underline">{x.k}: <b>{x.n}</b></Link>)}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2 text-sm">
+          <span className="text-xs text-slate-500">Documentación:</span>
+          {porDoc.map((x) => <Link key={x.k} href={`/oportunidades?doc=${encodeURIComponent(x.k)}`} className={`badge hover:underline ${DOC_COLOR[x.k] ?? ""}`}>{x.k}: <b>{x.n}</b></Link>)}
+        </div>
+      </div>
+      <div className="card">
+        <h2 className="mb-2 flex font-bold text-navy">Próximas acciones vencidas o de hoy ({vencidas.length})<Link className="ml-auto text-sm font-normal underline" href="/oportunidades?vencidas=1">ver todas</Link></h2>
         <table className="w-full">
           <thead><tr><th className="th">Fecha</th><th className="th">Prio.</th><th className="th">Oportunidad</th><th className="th">Acción</th><th className="th">Etapa</th><th className="th">Responsable</th></tr></thead>
           <tbody>
-            {vencidas.slice(0, 20).map((o) => (
+            {vencidas.slice(0, 15).map((o) => (
               <tr key={o.id}>
                 <td className="td whitespace-nowrap">{fecha(o.fecha_proxima_accion)}</td>
                 <td className="td"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{o.prioridad}</span></td>

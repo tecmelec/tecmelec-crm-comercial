@@ -2,11 +2,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { ETAPAS, PRIORIDADES, GO_NOGO } from "@/lib/constantes";
+import { ETAPAS, PRIORIDADES, GO_NOGO, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, ORIGENES } from "@/lib/constantes";
 import { meur } from "@/lib/format";
 
 const CAMPOS_TEXTO: [string, string][] = [
-  ["proyecto", "Proyecto"], ["ciudad", "Ciudad"], ["tipo_activo", "Tipo de activo"], ["promotor", "Promotor"],
+  ["proyecto", "Proyecto"], ["ciudad", "Ciudad"], ["direccion", "Dirección de la obra"], ["tipo_activo", "Tipo de activo"], ["promotor", "Promotor"],
   ["constructor", "Constructor"], ["ingenieria_pm", "Ingeniería / PM"], ["fase_obra", "Fase de la obra"],
   ["estado_electrico", "Estado del paquete eléctrico"], ["presupuesto_txt", "Presupuesto (texto)"],
   ["ventana_rfq", "Ventana RFQ"], ["ventana_adjudicacion", "Ventana adjudicación"], ["contacto_objetivo", "Contacto objetivo (cargo)"],
@@ -32,11 +32,12 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
     const sb = supabaseBrowser();
     const payload: any = { ...o };
     ["id", "created_at", "updated_at", "paquete_meur", "potencial_meur", "updated_by"].forEach((k) => delete payload[k]);
-    ["empresa_id", "contacto_id", "responsable_id", "fecha_proxima_accion", "fecha_est_adjudicacion", "fecha_firma"].forEach((k) => { if (payload[k] === "") payload[k] = null; });
+    ["empresa_id", "promotor_id", "contacto_id", "responsable_id", "fecha_proxima_accion", "fecha_est_adjudicacion", "fecha_firma", "fecha_ultimo_contacto", "fecha_info"].forEach((k) => { if (payload[k] === "") payload[k] = null; });
     if (nueva) {
       if (!payload.codigo) {
-        const { count } = await sb.from("crm_oportunidades").select("id", { count: "exact", head: true });
-        payload.codigo = `OP-${String((count ?? 0) + 1).padStart(3, "0")}`;
+        const { data: ult } = await sb.from("crm_oportunidades").select("codigo").like("codigo", "OP-%").order("codigo", { ascending: false }).limit(1);
+        const n = Number(String(ult?.[0]?.codigo ?? "OP-0").replace(/\D/g, "")) || 0;
+        payload.codigo = `OP-${String(n + 1).padStart(3, "0")}`;
       }
       const { data, error } = await sb.from("crm_oportunidades").insert(payload).select("id").single();
       setGuardando(false);
@@ -61,6 +62,20 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
         <div><label className="lbl">Contacto principal</label><select className="inp" value={o.contacto_id ?? ""} onChange={(e) => set("contacto_id", e.target.value)}><option value="">—</option>{contactos.map((c) => <option key={c.id} value={c.id}>{c.nombre} ({c.cargo ?? "—"})</option>)}</select></div>
         <div><label className="lbl">Próxima acción – fecha</label><input type="date" className="inp" value={o.fecha_proxima_accion ?? ""} onChange={(e) => set("fecha_proxima_accion", e.target.value)} /></div>
         <div className="col-span-2"><label className="lbl">Próxima acción</label><input className="inp" value={o.proxima_accion ?? ""} onChange={(e) => set("proxima_accion", e.target.value)} /></div>
+      </div>
+
+      <div className="card grid grid-cols-2 gap-3 md:grid-cols-4">
+        <h3 className="col-span-2 font-bold text-navy md:col-span-4">Seguimiento comercial</h3>
+        <div className="col-span-2"><label className="lbl">Estado de seguimiento</label>
+          <input className="inp" list="lista-seguimiento" value={o.estado_seguimiento ?? ""} onChange={(e) => set("estado_seguimiento", e.target.value || null)} />
+          <datalist id="lista-seguimiento">{ESTADOS_SEGUIMIENTO.map((x) => <option key={x} value={x} />)}</datalist></div>
+        <div><label className="lbl">Documentación del proyecto</label><select className="inp" value={o.estado_documentacion ?? ""} onChange={(e) => set("estado_documentacion", e.target.value || null)}><option value="">—</option>{ESTADOS_DOC.map((x) => <option key={x}>{x}</option>)}</select></div>
+        <div><label className="lbl">Último contacto</label><input type="date" className="inp" value={o.fecha_ultimo_contacto ?? ""} onChange={(e) => set("fecha_ultimo_contacto", e.target.value)} /></div>
+        <div><label className="lbl">Gestionado por</label><input className="inp" value={o.gestionado_por ?? ""} onChange={(e) => set("gestionado_por", e.target.value || null)} /></div>
+        <div><label className="lbl">Origen del dato</label>
+          <input className="inp" list="lista-origen" value={o.origen ?? ""} onChange={(e) => set("origen", e.target.value || null)} />
+          <datalist id="lista-origen">{ORIGENES.map((x) => <option key={x} value={x} />)}</datalist></div>
+        <div className="col-span-2"><label className="lbl">Promotor (empresa)</label><select className="inp" value={o.promotor_id ?? ""} onChange={(e) => set("promotor_id", e.target.value)}><option value="">—</option>{empresas.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
       </div>
 
       <div className="card grid grid-cols-2 gap-3 md:grid-cols-4">

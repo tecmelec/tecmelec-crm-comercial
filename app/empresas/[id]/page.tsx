@@ -18,7 +18,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   if (!emp) notFound();
   const [{ data: contactos }, { data: opps }, { data: acts }, { data: usuarios }] = await Promise.all([
     sb.from("crm_contactos").select("*").eq("empresa_id", emp.id).order("nombre"),
-    sb.from("crm_oportunidades").select("id,codigo,proyecto,prioridad,etapa,potencial_meur").eq("empresa_id", emp.id),
+    sb.from("crm_oportunidades").select("id,codigo,proyecto,prioridad,etapa,potencial_meur,empresa_id,promotor_id,estado_seguimiento").or(`empresa_id.eq.${emp.id},promotor_id.eq.${emp.id}`).order("codigo"),
     sb.from("crm_actividades").select("*").eq("empresa_id", emp.id).order("fecha", { ascending: false }).limit(50),
     sb.from("crm_usuarios").select("user_id,nombre"),
   ]);
@@ -39,7 +39,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             {(opps ?? []).length === 0 && <p className="text-sm text-slate-500">Ninguna. Vincúlalas desde la ficha de la oportunidad.</p>}
             {(opps ?? []).map((o) => (
               <div key={o.id} className="text-sm"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{o.prioridad}</span>{" "}
-                <Link className="text-navy underline" href={`/oportunidades/${o.id}`}>{o.codigo} · {o.proyecto}</Link> — {etapaNombre(o.etapa)} · {meur(o.potencial_meur)}</div>
+                <Link className="text-navy underline" href={`/oportunidades/${o.id}`}>{o.codigo} · {o.proyecto}</Link> — {etapaNombre(o.etapa)}{o.estado_seguimiento ? ` · ${o.estado_seguimiento}` : ""} · {meur(o.potencial_meur)}{o.promotor_id === emp.id && o.empresa_id !== emp.id && <span className="text-xs text-slate-500"> (como promotor)</span>}</div>
             ))}
           </div>
         </div>
