@@ -33,7 +33,8 @@ La función ya se ejecuta cada día laborable a las 8:00 y guarda los resultados
 
 - **Panel**: contratado, adjudicado, ofertado vivo, pipeline ponderado, avance hacia 20 M€, KPIs de la semana frente al plan, acciones vencidas.
 - **Oportunidades**: 135 obras (37 de la investigación del plan + 98 de la BDD de contactos de obras), filtros por prioridad, etapa, estado de seguimiento, documentación y origen; botón «Seguimientos vencidos»; ficha editable con seguimiento, go/no-go, cifras, contactos de la obra e historial.
-- **+ Registrar**: formulario para el móvil (llamada, visita, reunión, RFQ, oferta…) con foto.
+- **Mi diario**: registro diario de cada usuario: tipo (visita, llamada, email, reunión, elaboración de oferta, prospección, desplazamiento…), hora, **tiempo invertido**, empresa, proyecto, personas con las que se habló y alta de contactos nuevos. Totales del día y corrección/borrado de lo propio.
+- **Informes**: informe diario (o de cualquier periodo) por usuario y general: horas por tipo, por usuario, proyectos y empresas con más dedicación, detalle completo; imprimir/PDF y descarga a Excel (CSV). Admin/dirección ven a todo el equipo; el resto, solo lo suyo.
 - **Empresas**: 198 constructoras, promotoras, ingenierías, PM, operadores y competidores; teléfono/email general; oportunidades como constructora o como promotor.
 - **Contactos**: directorio de 85 contactos con búsqueda y llamada/email con un toque.
 - **Licitaciones**: detectadas automáticamente; botón «Crear oportunidad».

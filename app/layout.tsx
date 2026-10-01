@@ -9,7 +9,8 @@ export const viewport = { width: "device-width", initialScale: 1 };
 const NAV = [
   { href: "/", n: "Panel" },
   { href: "/oportunidades", n: "Oportunidades" },
-  { href: "/registrar", n: "+ Registrar" },
+  { href: "/diario", n: "Mi diario" },
+  { href: "/informes", n: "Informes" },
   { href: "/empresas", n: "Empresas" },
   { href: "/contactos", n: "Contactos" },
   { href: "/licitaciones", n: "Licitaciones" },
@@ -22,7 +23,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="es">
       <body>
         {user && (
-          <header className="bg-navy text-white">
+          <header className="no-print bg-navy text-white">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2">
               <span className="font-bold">CRM Comercial</span>
               {perfil && NAV.map((l) => (

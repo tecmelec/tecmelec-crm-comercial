@@ -14,12 +14,37 @@ export const ETAPAS: { v: string; n: string; p: number }[] = [
 ];
 export const etapaNombre = (v: string) => ETAPAS.find((e) => e.v === v)?.n ?? v;
 export const PRIORIDADES = ["P1", "P2", "P3", "Fuera"];
-export const TIPOS_ACT = [
-  { v: "llamada", n: "Llamada" }, { v: "email", n: "Email" }, { v: "linkedin", n: "LinkedIn" },
-  { v: "reunion", n: "Reunión" }, { v: "visita", n: "Visita de obra" }, { v: "rfq", n: "RFQ recibida" },
-  { v: "oferta", n: "Oferta presentada" }, { v: "negociacion", n: "Negociación" }, { v: "adjudicacion", n: "Adjudicación" },
-  { v: "nota", n: "Nota" },
+/** Tipos de actividad del diario. g = grupo para informes; externo = cuenta como contacto con cliente. */
+export const TIPOS_ACT: { v: string; n: string; g: string; externo: boolean }[] = [
+  { v: "visita", n: "Visita (obra / cliente)", g: "Visitas y reuniones", externo: true },
+  { v: "reunion", n: "Reunión con cliente", g: "Visitas y reuniones", externo: true },
+  { v: "videollamada", n: "Videollamada", g: "Visitas y reuniones", externo: true },
+  { v: "llamada", n: "Llamada", g: "Llamadas y emails", externo: true },
+  { v: "email", n: "Email", g: "Llamadas y emails", externo: true },
+  { v: "linkedin", n: "LinkedIn", g: "Llamadas y emails", externo: true },
+  { v: "elaboracion_oferta", n: "Elaboración de oferta", g: "Ofertas", externo: false },
+  { v: "rfq", n: "RFQ / documentación recibida", g: "Ofertas", externo: true },
+  { v: "oferta", n: "Oferta presentada", g: "Ofertas", externo: true },
+  { v: "negociacion", n: "Negociación", g: "Ofertas", externo: true },
+  { v: "adjudicacion", n: "Adjudicación", g: "Ofertas", externo: true },
+  { v: "prospeccion", n: "Prospección / búsqueda de obras", g: "Trabajo interno", externo: false },
+  { v: "reunion_interna", n: "Reunión interna", g: "Trabajo interno", externo: false },
+  { v: "administrativo", n: "Gestión administrativa", g: "Trabajo interno", externo: false },
+  { v: "desplazamiento", n: "Desplazamiento", g: "Desplazamientos", externo: false },
+  { v: "nota", n: "Nota", g: "Trabajo interno", externo: false },
 ];
+export const tipoNombre = (v: string) => TIPOS_ACT.find((t) => t.v === v)?.n ?? v;
+export const GRUPOS_ACT = ["Visitas y reuniones", "Llamadas y emails", "Ofertas", "Trabajo interno", "Desplazamientos"];
+export const GRUPO_COLOR: Record<string, string> = {
+  "Visitas y reuniones": "#1F3864", "Llamadas y emails": "#2E75B6", "Ofertas": "#C55A11", "Trabajo interno": "#7F7F7F", "Desplazamientos": "#BF9000",
+};
+export const DURACIONES = [15, 30, 45, 60, 90, 120, 180, 240];
+export const horas = (min: number | null | undefined) => {
+  const m = Math.round(Number(min ?? 0));
+  if (!m) return "0 h";
+  const h = Math.floor(m / 60), r = m % 60;
+  return h ? (r ? `${h} h ${r} min` : `${h} h`) : `${r} min`;
+};
 export const ROLES = ["admin", "direccion", "comercial", "estudios", "ingenieria", "finanzas", "lectura"];
 export const TIPOS_EMPRESA = ["constructora", "promotora", "ingenieria", "pm", "operador", "competidor", "otro"];
 export const GO_NOGO = [

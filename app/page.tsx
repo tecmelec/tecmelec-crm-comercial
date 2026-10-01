@@ -16,7 +16,7 @@ export default async function Panel() {
   const hoy = isoDia(new Date());
   const [{ data: opps }, { data: acts }, { data: plan }, { count: licNuevas }, { data: usuarios }] = await Promise.all([
     sb.from("crm_oportunidades").select("id,codigo,proyecto,prioridad,etapa,potencial_meur,importe_ofertado_meur,prob_adjudicacion,importe_contratado_meur,fecha_proxima_accion,proxima_accion,responsable_id,fecha_firma,fecha_est_adjudicacion,estado_seguimiento,estado_documentacion"),
-    sb.from("crm_actividades").select("tipo,nuevo_contacto,usuario_id,fecha").gte("fecha", lunes.toISOString()),
+    sb.from("crm_actividades").select("tipo,nuevo_contacto,usuario_id,fecha,duracion_min").gte("fecha", lunes.toISOString()),
     sb.from("crm_plan_semanal").select("*").lte("inicio", hoy).gte("fin", hoy).maybeSingle(),
     sb.from("crm_licitaciones").select("id", { count: "exact", head: true }).eq("estado", "nueva"),
     sb.from("crm_usuarios").select("user_id,nombre"),
@@ -43,6 +43,7 @@ export default async function Panel() {
     { k: "RFQ recibidas", real: cuenta((a) => a.tipo === "rfq"), obj: plan?.rfq },
     { k: "Ofertas presentadas", real: cuenta((a) => a.tipo === "oferta"), obj: plan?.ofertas },
     { k: "Llamadas", real: cuenta((a) => a.tipo === "llamada"), obj: 33 },
+    { k: "Horas registradas", real: Math.round(A.reduce((s, a) => s + Number(a.duracion_min ?? 0), 0) / 6) / 10, obj: undefined },
   ];
   const vencidas = O.filter((o) => o.fecha_proxima_accion && o.fecha_proxima_accion <= hoy && !["9", "X", "Z"].includes(o.etapa))
     .sort((a, b) => (a.fecha_proxima_accion! < b.fecha_proxima_accion! ? -1 : 1));

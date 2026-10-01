@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getSesion } from "@/lib/supabase/server";
 import SinAcceso from "@/components/SinAcceso";
 import EmpresaEditor from "@/components/EmpresaEditor";
-import ActividadForm from "@/components/ActividadForm";
+import DiarioForm from "@/components/DiarioForm";
+import { SELECT_ACT } from "@/lib/diario";
 import Timeline from "@/components/Timeline";
 import { firmarFotos } from "@/lib/fotos";
 import { etapaNombre, PRIO_COLOR } from "@/lib/constantes";
@@ -12,14 +13,14 @@ import { meur } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function Page({ params }: { params: { id: string } }) {
-  const { sb, perfil } = await getSesion();
+  const { sb, user, perfil } = await getSesion();
   if (!perfil) return <SinAcceso />;
   const { data: emp } = await sb.from("crm_empresas").select("*").eq("id", params.id).maybeSingle();
   if (!emp) notFound();
   const [{ data: contactos }, { data: opps }, { data: acts }, { data: usuarios }] = await Promise.all([
     sb.from("crm_contactos").select("*").eq("empresa_id", emp.id).order("nombre"),
     sb.from("crm_oportunidades").select("id,codigo,proyecto,prioridad,etapa,potencial_meur,empresa_id,promotor_id,estado_seguimiento").or(`empresa_id.eq.${emp.id},promotor_id.eq.${emp.id}`).order("codigo"),
-    sb.from("crm_actividades").select("*").eq("empresa_id", emp.id).order("fecha", { ascending: false }).limit(50),
+    sb.from("crm_actividades").select(SELECT_ACT).eq("empresa_id", emp.id).order("fecha", { ascending: false }).limit(50),
     sb.from("crm_usuarios").select("user_id,nombre"),
   ]);
   const fotos = await firmarFotos(sb, acts ?? []);
@@ -45,9 +46,9 @@ export default async function Page({ params }: { params: { id: string } }) {
         </div>
         <div className="space-y-3">
           <h2 className="font-bold text-navy">Registrar actividad con la empresa</h2>
-          <ActividadForm empresaId={emp.id} opps={[]} contactos={contactos ?? []} />
+          <DiarioForm empresaId={emp.id} />
           <h2 className="font-bold text-navy">Historial</h2>
-          <Timeline acts={acts ?? []} usuarios={usuarios ?? []} fotos={fotos} />
+          <Timeline acts={acts ?? []} usuarios={usuarios ?? []} fotos={fotos} usuarioId={user?.id} esAdmin={["admin", "direccion"].includes(perfil.rol)} />
         </div>
       </div>
     </div>

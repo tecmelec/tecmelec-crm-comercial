@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getSesion } from "@/lib/supabase/server";
 import SinAcceso from "@/components/SinAcceso";
 import OportunidadForm from "@/components/OportunidadForm";
-import ActividadForm from "@/components/ActividadForm";
+import DiarioForm from "@/components/DiarioForm";
+import { SELECT_ACT } from "@/lib/diario";
 import Timeline from "@/components/Timeline";
 import { firmarFotos } from "@/lib/fotos";
 import { PRIO_COLOR, DOC_COLOR, etapaNombre } from "@/lib/constantes";
@@ -12,12 +13,12 @@ import { fecha } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function Page({ params }: { params: { id: string } }) {
-  const { sb, perfil } = await getSesion();
+  const { sb, user, perfil } = await getSesion();
   if (!perfil) return <SinAcceso />;
   const { data: opp } = await sb.from("crm_oportunidades").select("*").eq("id", params.id).maybeSingle();
   if (!opp) notFound();
   const [{ data: acts }, { data: empresas }, { data: usuarios }, { data: contactos }, { data: lics }] = await Promise.all([
-    sb.from("crm_actividades").select("*").eq("oportunidad_id", opp.id).order("fecha", { ascending: false }),
+    sb.from("crm_actividades").select(SELECT_ACT).eq("oportunidad_id", opp.id).order("fecha", { ascending: false }),
     sb.from("crm_empresas").select("id,nombre").order("nombre"),
     sb.from("crm_usuarios").select("user_id,nombre").eq("activo", true),
     contactosDe(sb, opp),
@@ -61,9 +62,9 @@ export default async function Page({ params }: { params: { id: string } }) {
             </div>
           )}
           <h2 className="font-bold text-navy">Registrar actividad</h2>
-          <ActividadForm oportunidadId={opp.id} empresaId={opp.empresa_id} contactos={contactos ?? []} />
+          <DiarioForm oportunidadId={opp.id} empresaId={opp.empresa_id} />
           <h2 className="font-bold text-navy">Historial</h2>
-          <Timeline acts={acts ?? []} usuarios={usuarios ?? []} fotos={fotos} />
+          <Timeline acts={acts ?? []} usuarios={usuarios ?? []} fotos={fotos} usuarioId={user?.id} esAdmin={["admin", "direccion"].includes(perfil.rol)} />
         </div>
       </div>
     </div>
