@@ -36,6 +36,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           <span className="badge bg-slate-100">{etapaNombre(opp.etapa)}</span>
           {opp.estado_seguimiento && <span className="badge bg-indigo-100 text-indigo-900">{opp.estado_seguimiento}</span>}
           {opp.estado_documentacion && <span className={`badge ${DOC_COLOR[opp.estado_documentacion] ?? ""}`}>Doc.: {opp.estado_documentacion}</span>}
+          <span>Creada: {fecha(opp.created_at)}</span>
           {opp.fecha_ultimo_contacto && <span>Último contacto: {fecha(opp.fecha_ultimo_contacto)}</span>}
           {opp.direccion && <span>· {opp.direccion}{opp.ciudad ? `, ${opp.ciudad}` : ""}</span>}
         </div>

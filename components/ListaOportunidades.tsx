@@ -15,7 +15,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
   const [doc, setDoc] = useState(inicial.doc ?? "");
   const [origen, setOrigen] = useState(inicial.origen ?? "");
   const [soloVencidas, setSoloVencidas] = useState(!!inicial.vencidas);
-  const [orden, setOrden] = useState<"prio" | "potencial" | "accion" | "contacto">(inicial.vencidas ? "accion" : "prio");
+  const [orden, setOrden] = useState<"prio" | "potencial" | "accion" | "contacto" | "creada">(inicial.vencidas ? "accion" : "prio");
   const hoy = hoyISO();
   const origenes = useMemo(() => [...new Set(opps.map((o) => o.origen).filter(Boolean))].sort(), [opps]);
   const cerrada = (o: any) => ["9", "X", "Z"].includes(o.etapa);
@@ -36,6 +36,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
     l = [...l].sort((a, b) =>
       orden === "prio" ? po(a.prioridad) - po(b.prioridad) || Number(b.potencial_meur ?? 0) - Number(a.potencial_meur ?? 0)
       : orden === "potencial" ? Number(b.potencial_meur ?? 0) - Number(a.potencial_meur ?? 0)
+      : orden === "creada" ? String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""))
       : orden === "contacto" ? String(b.fecha_ultimo_contacto ?? "").localeCompare(String(a.fecha_ultimo_contacto ?? ""))
       : String(a.fecha_proxima_accion ?? "9999").localeCompare(String(b.fecha_proxima_accion ?? "9999")));
     return l;
@@ -77,14 +78,14 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
         </select>
         <select className="inp" value={orden} onChange={(e) => setOrden(e.target.value as any)}>
           <option value="prio">Orden: prioridad</option><option value="potencial">Orden: potencial</option>
-          <option value="accion">Orden: próxima acción</option><option value="contacto">Orden: último contacto</option>
+          <option value="accion">Orden: próxima acción</option><option value="contacto">Orden: último contacto</option><option value="creada">Orden: más recientes</option>
         </select>
         <button className="btn-sec" onClick={() => { setQ(""); setPrio(""); setEtapa("activas"); setResp(""); setSeg(""); setDoc(""); setOrigen(""); setSoloVencidas(false); setOrden("prio"); }}>Limpiar filtros</button>
       </div>
       <div className="card overflow-x-auto p-0">
         <table className="w-full min-w-[1100px]">
           <thead><tr>
-            <th className="th">Código</th><th className="th">Prio.</th><th className="th">Obra</th><th className="th">Ciudad</th>
+            <th className="th">Código</th><th className="th">Creada</th><th className="th">Prio.</th><th className="th">Obra</th><th className="th">Ciudad</th>
             <th className="th">Constructora / promotor</th><th className="th">Etapa</th><th className="th">Seguimiento</th><th className="th">Doc.</th>
             <th className="th">Últ. contacto</th><th className="th text-right">Potencial</th><th className="th">Próxima acción</th><th className="th">Resp.</th>
           </tr></thead>
@@ -92,6 +93,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
             {lista.map((o) => (
               <tr key={o.id} className="hover:bg-slate-50">
                 <td className="td whitespace-nowrap"><Link className="text-navy underline" href={`/oportunidades/${o.id}`}>{o.codigo}</Link></td>
+                <td className="td text-xs whitespace-nowrap">{fecha(o.created_at)}</td>
                 <td className="td"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{o.prioridad}</span></td>
                 <td className="td"><Link href={`/oportunidades/${o.id}`} className="hover:underline">{o.proyecto}</Link>
                   {o.contacto_objetivo && <div className="text-xs text-slate-500">{o.contacto_objetivo}</div>}</td>
@@ -106,7 +108,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
                 <td className="td text-xs">{nombre(o.responsable_id)}</td>
               </tr>
             ))}
-            {lista.length === 0 && <tr><td className="td" colSpan={12}>Ninguna oportunidad con estos filtros.</td></tr>}
+            {lista.length === 0 && <tr><td className="td" colSpan={13}>Ninguna oportunidad con estos filtros.</td></tr>}
           </tbody>
         </table>
       </div>
