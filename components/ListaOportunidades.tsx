@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ETAPAS, etapaNombre, PRIORIDADES, PRIO_COLOR, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, DOC_COLOR } from "@/lib/constantes";
 import { meur, fecha, hoyISO } from "@/lib/format";
+import { descargarExcel } from "@/lib/excel";
 
 type Inicial = { vencidas?: boolean; origen?: string; seg?: string; doc?: string };
 
@@ -45,6 +46,29 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
   const total = lista.reduce((s, o) => s + Number(o.potencial_meur ?? 0), 0);
   const nVencidas = opps.filter(vencida).length;
   const nombre = (id: string) => usuarios.find((u) => u.user_id === id)?.nombre ?? "—";
+  const [exportando, setExportando] = useState(false);
+  async function exportar() {
+    setExportando(true);
+    try {
+      await descargarExcel(`oportunidades_${hoy}`, [{
+        nombre: "Oportunidades",
+        titulo: `Oportunidades (${lista.length}) · exportado el ${new Date().toLocaleString("es-ES")}`,
+        columnas: [
+          { h: "Código", k: "codigo", w: 10 }, { h: "Creada", k: "created_at", tipo: "fecha", w: 12 }, { h: "Prioridad", k: "prioridad", w: 9 },
+          { h: "Obra", k: "proyecto", w: 45 }, { h: "Ciudad", k: "ciudad", w: 16 }, { h: "Dirección", k: "direccion", w: 30 },
+          { h: "Tipo de activo", k: "tipo_activo", w: 18 }, { h: "Constructora", k: "constructor", w: 30 }, { h: "Promotor", k: "promotor", w: 30 },
+          { h: "Contacto", k: "contacto_objetivo", w: 30 }, { h: "Etapa", k: "etapa_n", w: 20 }, { h: "Seguimiento", k: "estado_seguimiento", w: 22 },
+          { h: "Documentación", k: "estado_documentacion", w: 13 }, { h: "Último contacto", k: "fecha_ultimo_contacto", tipo: "fecha", w: 13 },
+          { h: "Potencial (M€)", k: "potencial_meur", tipo: "meur", w: 12 }, { h: "Ofertado (M€)", k: "importe_ofertado_meur", tipo: "meur", w: 12 },
+          { h: "Próxima acción (fecha)", k: "fecha_proxima_accion", tipo: "fecha", w: 13 }, { h: "Vencida", k: "vencida_txt", w: 8 },
+          { h: "Próxima acción", k: "proxima_accion", w: 40 }, { h: "Responsable", k: "resp_n", w: 18 }, { h: "Gestionado por", k: "gestionado_por", w: 18 },
+          { h: "Origen", k: "origen", w: 24 },
+        ],
+        filas: lista.map((o) => ({ ...o, etapa_n: etapaNombre(o.etapa), resp_n: o.responsable_id ? nombre(o.responsable_id) : "", vencida_txt: vencida(o) ? "Sí" : "" })),
+      }]);
+    } catch (e: any) { alert("No se pudo generar el Excel: " + e.message); }
+    setExportando(false);
+  }
 
   return (
     <div className="space-y-3">
@@ -53,6 +77,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
         <button className={soloVencidas ? "btn" : "btn-sec"} onClick={() => { setSoloVencidas(!soloVencidas); setOrden("accion"); }}>
           Seguimientos vencidos ({nVencidas})
         </button>
+        <button className="btn-sec" onClick={exportar} disabled={exportando || !lista.length}>{exportando ? "Generando…" : "Exportar a Excel"}</button>
         <Link href="/oportunidades/nueva" className="btn">+ Nueva oportunidad</Link>
       </div>
       <div className="card grid grid-cols-2 gap-2 md:grid-cols-5">
