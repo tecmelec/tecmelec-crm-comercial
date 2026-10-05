@@ -5,6 +5,10 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { ETAPAS, PRIORIDADES, prioNombre, GO_NOGO, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, ORIGENES } from "@/lib/constantes";
 import { meur } from "@/lib/format";
 
+/** Cuadros ocultos de momento (los datos se conservan). Poner a true para volver a mostrarlos. */
+const MOSTRAR_SEGUIMIENTO = false;
+const MOSTRAR_GONOGO = false;
+
 const CAMPOS_TEXTO: [string, string][] = [
   ["proyecto", "Proyecto"], ["ciudad", "Ciudad"], ["direccion", "Dirección de la obra"], ["tipo_activo", "Tipo de activo"], ["promotor", "Promotor"],
   ["constructor", "Constructor"], ["ingenieria_pm", "Ingeniería / PM"], ["fase_obra", "Fase de la obra"],
@@ -64,6 +68,7 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
         <div className="col-span-2"><label className="lbl">Próxima acción</label><input className="inp" value={o.proxima_accion ?? ""} onChange={(e) => set("proxima_accion", e.target.value)} /></div>
       </div>
 
+      {MOSTRAR_SEGUIMIENTO && (
       <div className="card grid grid-cols-2 gap-3 md:grid-cols-4">
         <h3 className="col-span-2 font-bold text-navy md:col-span-4">Seguimiento comercial</h3>
         <div className="col-span-2"><label className="lbl">Estado de seguimiento</label>
@@ -77,6 +82,7 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
           <datalist id="lista-origen">{ORIGENES.map((x) => <option key={x} value={x} />)}</datalist></div>
         <div className="col-span-2"><label className="lbl">Promotor (empresa)</label><select className="inp" value={o.promotor_id ?? ""} onChange={(e) => set("promotor_id", e.target.value)}><option value="">—</option>{empresas.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
       </div>
+      )}
 
       <div className="card grid grid-cols-2 gap-3 md:grid-cols-4">
         <h3 className="col-span-2 font-bold text-navy md:col-span-4">Cifras (M€)</h3>
@@ -93,6 +99,7 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
         <div className="col-span-2"><label className="lbl">Motivo de pérdida / descarte</label><input className="inp" value={o.motivo_perdida ?? ""} onChange={(e) => set("motivo_perdida", e.target.value)} /></div>
       </div>
 
+      {MOSTRAR_GONOGO && (
       <div className={`card ${avisoGo ? "border-red-400" : ""}`}>
         <h3 className="mb-2 font-bold text-navy">Go / No-go (obligatorio antes de «5. En estudio»)</h3>
         {avisoGo && <p className="mb-2 text-sm font-semibold text-red-600">Faltan criterios: no debería estudiarse todavía.</p>}
@@ -104,6 +111,7 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
           ))}
         </div>
       </div>
+      )}
 
       <div className="card grid grid-cols-1 gap-3 md:grid-cols-2">
         <h3 className="font-bold text-navy md:col-span-2">Datos del proyecto</h3>
