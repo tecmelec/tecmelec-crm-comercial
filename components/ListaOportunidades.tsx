@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ETAPAS, etapaNombre, PRIORIDADES, PRIO_COLOR, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, DOC_COLOR } from "@/lib/constantes";
+import { ETAPAS, etapaNombre, PRIORIDADES, PRIO_COLOR, prioNombre, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, DOC_COLOR } from "@/lib/constantes";
 import { meur, fecha, hoyISO } from "@/lib/format";
 import { descargarExcel } from "@/lib/excel";
 
@@ -64,7 +64,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
           { h: "Próxima acción", k: "proxima_accion", w: 40 }, { h: "Responsable", k: "resp_n", w: 18 }, { h: "Gestionado por", k: "gestionado_por", w: 18 },
           { h: "Origen", k: "origen", w: 24 },
         ],
-        filas: lista.map((o) => ({ ...o, etapa_n: etapaNombre(o.etapa), resp_n: o.responsable_id ? nombre(o.responsable_id) : "", vencida_txt: vencida(o) ? "Sí" : "" })),
+        filas: lista.map((o) => ({ ...o, prioridad: prioNombre(o.prioridad), etapa_n: etapaNombre(o.etapa), resp_n: o.responsable_id ? nombre(o.responsable_id) : "", vencida_txt: vencida(o) ? "Sí" : "" })),
       }]);
     } catch (e: any) { alert("No se pudo generar el Excel: " + e.message); }
     setExportando(false);
@@ -83,7 +83,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
       <div className="card grid grid-cols-2 gap-2 md:grid-cols-5">
         <input className="inp col-span-2" placeholder="Buscar obra, ciudad, dirección, constructora, promotor, contacto…" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="inp" value={prio} onChange={(e) => setPrio(e.target.value)}>
-          <option value="">Todas las prioridades</option>{PRIORIDADES.map((p) => <option key={p}>{p}</option>)}
+          <option value="">Todas las prioridades</option>{PRIORIDADES.map((p) => <option key={p} value={p}>{prioNombre(p)}</option>)}
         </select>
         <select className="inp" value={etapa} onChange={(e) => setEtapa(e.target.value)}>
           <option value="activas">Activas (sin cerradas)</option><option value="">Todas</option>
@@ -119,7 +119,7 @@ export default function ListaOportunidades({ opps, usuarios, inicial = {} }: { o
               <tr key={o.id} className="hover:bg-slate-50">
                 <td className="td whitespace-nowrap"><Link className="text-navy underline" href={`/oportunidades/${o.id}`}>{o.codigo}</Link></td>
                 <td className="td text-xs whitespace-nowrap">{fecha(o.created_at)}</td>
-                <td className="td"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{o.prioridad}</span></td>
+                <td className="td"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{prioNombre(o.prioridad)}</span></td>
                 <td className="td"><Link href={`/oportunidades/${o.id}`} className="hover:underline">{o.proyecto}</Link>
                   {o.contacto_objetivo && <div className="text-xs text-slate-500">{o.contacto_objetivo}</div>}</td>
                 <td className="td text-xs">{o.ciudad}</td>

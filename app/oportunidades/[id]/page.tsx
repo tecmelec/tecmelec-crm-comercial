@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { getSesion } from "@/lib/supabase/server";
 import SinAcceso from "@/components/SinAcceso";
 import OportunidadForm from "@/components/OportunidadForm";
+import EliminarOportunidad from "@/components/EliminarOportunidad";
 import DiarioForm from "@/components/DiarioForm";
 import { SELECT_ACT } from "@/lib/diario";
 import Timeline from "@/components/Timeline";
 import { firmarFotos } from "@/lib/fotos";
-import { PRIO_COLOR, DOC_COLOR, etapaNombre } from "@/lib/constantes";
+import { PRIO_COLOR, DOC_COLOR, etapaNombre, prioNombre } from "@/lib/constantes";
 import { fecha } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +26,17 @@ export default async function Page({ params }: { params: { id: string } }) {
     sb.from("crm_licitaciones").select("id,titulo,url").eq("oportunidad_id", opp.id),
   ]);
   const fotos = await firmarFotos(sb, acts ?? []);
+  const { data: etapasHist } = await sb.from("crm_oportunidad_etapas").select("etapa_anterior,etapa_nueva,usuario_id,fecha,inicial").eq("oportunidad_id", opp.id).order("fecha", { ascending: false })
+    .then((r) => (r.error ? { data: [] as any[] } : r));
   return (
     <div className="space-y-4">
       <div>
-        <Link href="/oportunidades" className="text-sm text-navy underline">← Oportunidades</Link>
+        <div className="flex items-center">
+          <Link href="/oportunidades" className="text-sm text-navy underline">← Oportunidades</Link>
+          {perfil.rol === "admin" && <span className="ml-auto"><EliminarOportunidad id={opp.id} codigo={opp.codigo} proyecto={opp.proyecto} /></span>}
+        </div>
         <h1 className="mt-1 text-lg font-bold text-navy">
-          <span className={`badge mr-2 ${PRIO_COLOR[opp.prioridad]}`}>{opp.prioridad}</span>{opp.codigo} · {opp.proyecto}
+          <span className={`badge mr-2 ${PRIO_COLOR[opp.prioridad]}`}>{prioNombre(opp.prioridad)}</span>{opp.codigo} · {opp.proyecto}
         </h1>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
           <span className="badge bg-slate-100">{etapaNombre(opp.etapa)}</span>
@@ -64,6 +70,17 @@ export default async function Page({ params }: { params: { id: string } }) {
           )}
           <h2 className="font-bold text-navy">Registrar actividad</h2>
           <DiarioForm oportunidadId={opp.id} empresaId={opp.empresa_id} />
+          {(etapasHist ?? []).some((e: any) => !e.inicial) && (
+            <div className="card text-xs">
+              <h2 className="mb-1 text-sm font-bold text-navy">Cambios de etapa</h2>
+              {(etapasHist ?? []).filter((e: any) => !e.inicial).map((e: any, i: number) => (
+                <div key={i} className="border-b py-0.5 last:border-0">
+                  {new Date(e.fecha).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })} · {e.etapa_anterior ? `${etapaNombre(e.etapa_anterior)} → ` : "Alta en "}<b>{etapaNombre(e.etapa_nueva)}</b>
+                  {e.usuario_id && <span className="text-slate-500"> · {(usuarios ?? []).find((u: any) => u.user_id === e.usuario_id)?.nombre ?? ""}</span>}
+                </div>
+              ))}
+            </div>
+          )}
           <h2 className="font-bold text-navy">Historial</h2>
           <Timeline acts={acts ?? []} usuarios={usuarios ?? []} fotos={fotos} usuarioId={user?.id} esAdmin={["admin", "direccion"].includes(perfil.rol)} />
         </div>

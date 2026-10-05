@@ -7,7 +7,7 @@ import DiarioForm from "@/components/DiarioForm";
 import { SELECT_ACT } from "@/lib/diario";
 import Timeline from "@/components/Timeline";
 import { firmarFotos } from "@/lib/fotos";
-import { etapaNombre, PRIO_COLOR } from "@/lib/constantes";
+import { etapaNombre, PRIO_COLOR, prioNombre } from "@/lib/constantes";
 import { meur } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           <div className="card"><h3 className="mb-2 font-bold text-navy">Oportunidades vinculadas</h3>
             {(opps ?? []).length === 0 && <p className="text-sm text-slate-500">Ninguna. Vincúlalas desde la ficha de la oportunidad.</p>}
             {(opps ?? []).map((o) => (
-              <div key={o.id} className="text-sm"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{o.prioridad}</span>{" "}
+              <div key={o.id} className="text-sm"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{prioNombre(o.prioridad)}</span>{" "}
                 <Link className="text-navy underline" href={`/oportunidades/${o.id}`}>{o.codigo} · {o.proyecto}</Link> — {etapaNombre(o.etapa)}{o.estado_seguimiento ? ` · ${o.estado_seguimiento}` : ""} · {meur(o.potencial_meur)}{o.promotor_id === emp.id && o.empresa_id !== emp.id && <span className="text-xs text-slate-500"> (como promotor)</span>}</div>
             ))}
           </div>

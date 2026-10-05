@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { ETAPAS, PRIORIDADES, GO_NOGO, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, ORIGENES } from "@/lib/constantes";
+import { ETAPAS, PRIORIDADES, prioNombre, GO_NOGO, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, ORIGENES } from "@/lib/constantes";
 import { meur } from "@/lib/format";
 
 const CAMPOS_TEXTO: [string, string][] = [
@@ -55,7 +55,7 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
   return (
     <div className="space-y-4">
       <div className="card grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div><label className="lbl">Prioridad</label><select className="inp" value={o.prioridad} onChange={(e) => set("prioridad", e.target.value)}>{PRIORIDADES.map((p) => <option key={p}>{p}</option>)}</select></div>
+        <div><label className="lbl">Prioridad</label><select className="inp" value={o.prioridad} onChange={(e) => set("prioridad", e.target.value)}>{PRIORIDADES.map((p) => <option key={p} value={p}>{prioNombre(p)}</option>)}</select></div>
         <div><label className="lbl">Etapa</label><select className="inp" value={o.etapa} onChange={(e) => set("etapa", e.target.value)}>{ETAPAS.map((e) => <option key={e.v} value={e.v}>{e.n}</option>)}</select></div>
         <div><label className="lbl">Responsable</label><select className="inp" value={o.responsable_id ?? ""} onChange={(e) => set("responsable_id", e.target.value)}><option value="">—</option>{usuarios.map((u) => <option key={u.user_id} value={u.user_id}>{u.nombre}</option>)}</select></div>
         <div><label className="lbl">Empresa vinculada</label><select className="inp" value={o.empresa_id ?? ""} onChange={(e) => set("empresa_id", e.target.value)}><option value="">—</option>{empresas.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>

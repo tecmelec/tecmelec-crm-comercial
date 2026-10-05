@@ -14,6 +14,9 @@ export const ETAPAS: { v: string; n: string; p: number }[] = [
 ];
 export const etapaNombre = (v: string) => ETAPAS.find((e) => e.v === v)?.n ?? v;
 export const PRIORIDADES = ["P1", "P2", "P3", "Fuera"];
+/** Nombre visible de la prioridad (en la base de datos se guarda P1/P2/P3/Fuera). */
+export const PRIO_NOMBRE: Record<string, string> = { P1: "Alta", P2: "Media", P3: "Baja", Fuera: "Fuera" };
+export const prioNombre = (p?: string | null) => (p ? PRIO_NOMBRE[p] ?? p : "—");
 /** Tipos de actividad del diario. g = grupo para informes; externo = cuenta como contacto con cliente. */
 export const TIPOS_ACT: { v: string; n: string; g: string; externo: boolean }[] = [
   { v: "visita", n: "Visita (obra / cliente)", g: "Visitas y reuniones", externo: true },

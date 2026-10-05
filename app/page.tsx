@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSesion } from "@/lib/supabase/server";
 import SinAcceso from "@/components/SinAcceso";
-import { ETAPAS, etapaNombre, OBJETIVO_MEUR, PRIO_COLOR, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, DOC_COLOR } from "@/lib/constantes";
+import { ETAPAS, etapaNombre, OBJETIVO_MEUR, PRIO_COLOR, prioNombre, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, DOC_COLOR } from "@/lib/constantes";
 import { meur, fecha } from "@/lib/format";
 import { inicioSemana, isoDia } from "@/lib/semana";
 
@@ -112,7 +112,7 @@ export default async function Panel() {
             {vencidas.slice(0, 15).map((o) => (
               <tr key={o.id}>
                 <td className="td whitespace-nowrap">{fecha(o.fecha_proxima_accion)}</td>
-                <td className="td"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{o.prioridad}</span></td>
+                <td className="td"><span className={`badge ${PRIO_COLOR[o.prioridad]}`}>{prioNombre(o.prioridad)}</span></td>
                 <td className="td"><Link className="text-navy underline" href={`/oportunidades/${o.id}`}>{o.codigo} · {o.proyecto}</Link></td>
                 <td className="td">{o.proxima_accion}</td>
                 <td className="td text-xs">{etapaNombre(o.etapa)}</td>
