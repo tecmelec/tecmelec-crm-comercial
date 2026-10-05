@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { ETAPAS, PRIORIDADES, prioNombre, GO_NOGO, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, ORIGENES } from "@/lib/constantes";
+import { ETAPAS, PRIORIDADES, prioNombre, TIPOS_ACTIVO, GO_NOGO, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, ORIGENES } from "@/lib/constantes";
 import { meur } from "@/lib/format";
 
 /** Cuadros ocultos de momento (los datos se conservan). Poner a true para volver a mostrarlos. */
@@ -11,11 +11,8 @@ const MOSTRAR_GONOGO = false;
 
 const CAMPOS_TEXTO: [string, string][] = [
   ["proyecto", "Proyecto"], ["ciudad", "Ciudad"], ["direccion", "Dirección de la obra"], ["tipo_activo", "Tipo de activo"], ["promotor", "Promotor"],
-  ["constructor", "Constructor"], ["ingenieria_pm", "Ingeniería / PM"], ["fase_obra", "Fase de la obra"],
-  ["estado_electrico", "Estado del paquete eléctrico"], ["presupuesto_txt", "Presupuesto (texto)"],
-  ["ventana_rfq", "Ventana RFQ"], ["ventana_adjudicacion", "Ventana adjudicación"], ["contacto_objetivo", "Contacto objetivo (cargo)"],
+  ["ingenieria_pm", "Ingeniería / PM"], ["ventana_adjudicacion", "Ventana adjudicación"], ["contacto_objetivo", "Contacto objetivo (cargo)"],
   ["empresa_objetivo", "Empresa objetivo"], ["via_entrada", "Vía de entrada"], ["prob_ofertar", "Probabilidad de poder ofertar"],
-  ["fuente", "Fuente"], ["url", "URL de la fuente"], ["fecha_info", "Fecha de la información"],
 ];
 
 export default function OportunidadForm({ opp, empresas, contactos, usuarios, nueva, licitacionId }: { opp: any; empresas: any[]; contactos: any[]; usuarios: any[]; nueva?: boolean; licitacionId?: string }) {
@@ -116,9 +113,17 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
       <div className="card grid grid-cols-1 gap-3 md:grid-cols-2">
         <h3 className="font-bold text-navy md:col-span-2">Datos del proyecto</h3>
         {CAMPOS_TEXTO.map(([k, n]) => (
+          k === "tipo_activo" ? (
+            <div key={k}><label className="lbl">{n}</label>
+              <select className="inp" value={o.tipo_activo ?? ""} onChange={(e) => set("tipo_activo", e.target.value || null)}>
+                <option value="">—</option>
+                {o.tipo_activo && !TIPOS_ACTIVO.includes(o.tipo_activo) && <option value={o.tipo_activo}>{o.tipo_activo} (valor anterior)</option>}
+                {TIPOS_ACTIVO.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select></div>
+          ) : (
           <div key={k}><label className="lbl">{n}</label><input className="inp" value={o[k] ?? ""} onChange={(e) => set(k, e.target.value)} /></div>
+          )
         ))}
-        <div className="md:col-span-2"><label className="lbl">Nota de estimación</label><input className="inp" value={o.nota_estimacion ?? ""} onChange={(e) => set("nota_estimacion", e.target.value)} /></div>
         <div className="md:col-span-2"><label className="lbl">Notas</label><textarea rows={4} className="inp" value={o.notas ?? ""} onChange={(e) => set("notas", e.target.value)} /></div>
       </div>
 

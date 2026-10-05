@@ -48,6 +48,8 @@ export const horas = (min: number | null | undefined) => {
   const h = Math.floor(m / 60), r = m % 60;
   return h ? (r ? `${h} h ${r} min` : `${h} h`) : `${r} min`;
 };
+/** Tipo de activo de la obra (desplegable). */
+export const TIPOS_ACTIVO = ["Singular", "Hospitality", "Corporate", "Residencial", "Sanitario"];
 export const ROLES = ["admin", "direccion", "comercial", "estudios", "ingenieria", "finanzas", "lectura"];
 export const TIPOS_EMPRESA = ["constructora", "promotora", "ingenieria", "pm", "operador", "competidor", "otro"];
 export const GO_NOGO = [
