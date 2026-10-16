@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const grupo = (t: string) => TIPOS_ACT.find((x) => x.v === t)?.g ?? "Trabajo interno";
 const minutos = (l: any[]) => l.reduce((s, a) => s + Number(a.duracion_min ?? 0), 0);
 
-export default async function Page({ searchParams }: { searchParams: { desde?: string; hasta?: string; u?: string } }) {
+export default async function Page({ searchParams }: { searchParams: { desde?: string; hasta?: string; u?: string; r?: string } }) {
   const { sb, user, perfil } = await getSesion();
   if (!perfil || !user) return <SinAcceso />;
   const esAdmin = ["admin", "direccion"].includes(perfil.rol);
@@ -23,6 +23,8 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
   if (hasta < desde) hasta = desde;
   if (hasta > sumarDias(desde, 92)) hasta = sumarDias(desde, 92);
   const uSel = esAdmin ? searchParams.u ?? "" : user.id;
+  // Filtro por responsable de la oportunidad ("_sin" = oportunidades sin responsable)
+  const rSel = searchParams.r ?? "";
 
   let q = sb.from("crm_actividades").select(SELECT_ACT)
     .gte("fecha", inicioDia(desde).toISOString()).lt("fecha", inicioDia(sumarDias(hasta, 1)).toISOString())
@@ -36,7 +38,10 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
   ]);
   // ---- Resultados comerciales del periodo
   const enRango = (d?: string | null) => !!d && d >= desde && d <= hasta;
-  const O = oppsAll ?? [];
+  const deResp = (o: any) => !rSel || (rSel === "_sin" ? !o.responsable_id : o.responsable_id === rSel);
+  const O = (oppsAll ?? []).filter(deResp);
+  const idsResp = new Set(O.map((o) => o.id));
+  const acts = rSel ? (data ?? []).filter((a) => a.oportunidad_id && idsResp.has(a.oportunidad_id)) : data ?? [];
   const deUsuario = (o: any, uid?: string | null) => !uSel || o.responsable_id === uSel || uid === uSel;
   const nuevas = O.filter((o) => enRango(diaDe(o.created_at)) && deUsuario(o));
   const conseguidasMap = new Map<string, any>();
@@ -51,13 +56,12 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
   const importeOpp = (o: any) => Number(o.importe_contratado_meur ?? o.importe_ofertado_meur ?? 0);
   const totConseguido = conseguidas.reduce((s2, o) => s2 + importeOpp(o), 0);
   const ganadasTotal = O.filter((o) => ["8", "9"].includes(o.etapa) && (!uSel || o.responsable_id === uSel));
-  const ofertasPer = (data ?? []).filter((a) => a.tipo === "oferta");
+  const ofertasPer = acts.filter((a) => a.tipo === "oferta");
   const resultadosPor = (uid: string) => ({
     nuevas: nuevas.filter((o) => o.responsable_id === uid).length,
     ofertas: ofertasPer.filter((a) => a.usuario_id === uid).length,
     conseguidas: conseguidas.filter((o) => o.por === uid),
   });
-  const acts = data ?? [];
   const nombre = (id: string) => usuarios?.find((u) => u.user_id === id)?.nombre ?? "—";
   const porUsuario = [...new Set([...acts.map((a) => a.usuario_id), ...conseguidas.map((o) => o.por), ...nuevas.map((o) => o.responsable_id)].filter((x) => x && (!uSel || x === uSel)))].map((id) => ({ id, l: acts.filter((a) => a.usuario_id === id) }))
     .sort((a, b) => nombre(a.id).localeCompare(nombre(b.id)));
@@ -71,6 +75,8 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
     });
     return [...m.values()].sort((a, b) => b.min - a.min || b.n - a.n).slice(0, 10);
   };
+  const nombreResp = rSel === "_sin" ? "sin responsable" : nombre(rSel);
+  const qs = (u = uSel) => `${u && esAdmin ? `&u=${u}` : ""}${rSel ? `&r=${rSel}` : ""}`;
   const periodo = desde === hasta ? fechaLarga(desde) : `del ${fechaLarga(desde)} al ${fechaLarga(hasta)}`;
   const filasAct = acts.map((a) => ({
     Fecha: diaDe(a.fecha), Hora: horaDe(a.fecha), Usuario: nombre(a.usuario_id), Tipo: tipoNombre(a.tipo), Grupo: grupo(a.tipo),
@@ -84,11 +90,11 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
         <div className="mr-auto">
-          <h1 className="text-lg font-bold text-navy">Informe de actividad {uSel ? `· ${nombre(uSel)}` : "· todo el equipo"}</h1>
+          <h1 className="text-lg font-bold text-navy">Informe de actividad {uSel ? `· ${nombre(uSel)}` : "· todo el equipo"}{rSel && <span className="font-normal"> · oportunidades de {nombreResp}</span>}</h1>
           <p className="text-sm capitalize text-slate-600">{periodo}</p>
         </div>
         <ExportarInforme hojas={[
-          { nombre: "Actividades", titulo: `Actividad ${uSel ? nombre(uSel) : "equipo"} · ${periodo}`, filas: filasAct,
+          { nombre: "Actividades", titulo: `Actividad ${uSel ? nombre(uSel) : "equipo"}${rSel ? ` · oportunidades de ${nombreResp}` : ""} · ${periodo}`, filas: filasAct,
             columnas: Object.keys(filasAct[0] ?? { Fecha: 1 }).map((k) => ({ h: k, k, w: ["Resumen", "Siguiente paso", "Personas", "Proyecto"].includes(k) ? 40 : k === "Empresa" ? 28 : 14, tipo: k === "Minutos" ? "numero" as const : undefined })) },
           { nombre: "Conseguidas", titulo: `Oportunidades conseguidas · ${periodo}`,
             filas: conseguidas.map((o) => ({ fecha: o.cuando, codigo: o.codigo, proyecto: o.proyecto, ciudad: o.ciudad, constructora: o.constructor, etapa: etapaNombre(o.etapa), importe: importeOpp(o) || null, resp: o.por ? nombre(o.por) : "" })),
@@ -98,7 +104,7 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
             filas: nuevas.map((o) => ({ creada: o.created_at, codigo: o.codigo, proyecto: o.proyecto, ciudad: o.ciudad, etapa: etapaNombre(o.etapa), potencial: o.potencial_meur, resp: o.responsable_id ? nombre(o.responsable_id) : "" })),
             columnas: [{ h: "Creada", k: "creada", tipo: "fecha" as const, w: 12 }, { h: "Código", k: "codigo", w: 10 }, { h: "Obra", k: "proyecto", w: 45 }, { h: "Ciudad", k: "ciudad" },
               { h: "Etapa", k: "etapa", w: 20 }, { h: "Potencial (M€)", k: "potencial", tipo: "meur" as const, w: 12 }, { h: "Responsable", k: "resp" }] },
-        ]} nombre={`actividad_${desde}${hasta !== desde ? "_" + hasta : ""}${uSel ? "_" + nombre(uSel).replace(/\s+/g, "_") : ""}`} />
+        ]} nombre={`actividad_${desde}${hasta !== desde ? "_" + hasta : ""}${uSel ? "_" + nombre(uSel).replace(/\s+/g, "_") : ""}${rSel ? "_resp_" + nombreResp.replace(/\s+/g, "_") : ""}`} />
       </div>
       <form className="no-print card flex flex-wrap items-end gap-2" action="/informes">
         <div><label className="lbl">Desde</label><input type="date" name="desde" defaultValue={desde} className="inp" /></div>
@@ -108,15 +114,20 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
             <select name="u" defaultValue={uSel} className="inp"><option value="">Todo el equipo</option>
               {(usuarios ?? []).map((u) => <option key={u.user_id} value={u.user_id}>{u.nombre}</option>)}</select></div>
         )}
+        <div><label className="lbl">Responsable de la oportunidad</label>
+          <select name="r" defaultValue={rSel} className="inp"><option value="">Todos</option>
+            {(usuarios ?? []).filter((u) => u.activo !== false || u.user_id === rSel).map((u) => <option key={u.user_id} value={u.user_id}>{u.nombre}</option>)}
+            <option value="_sin">Sin responsable</option></select></div>
         <button className="btn">Ver informe</button>
         <span className="flex gap-2 text-sm">
-          <Link className="underline" href={`/informes?desde=${hoy}&hasta=${hoy}${uSel && esAdmin ? `&u=${uSel}` : ""}`}>Hoy</Link>
-          <Link className="underline" href={`/informes?desde=${sumarDias(hoy, -1)}&hasta=${sumarDias(hoy, -1)}${uSel && esAdmin ? `&u=${uSel}` : ""}`}>Ayer</Link>
-          <Link className="underline" href={`/informes?desde=${sumarDias(hoy, -6)}&hasta=${hoy}${uSel && esAdmin ? `&u=${uSel}` : ""}`}>Últimos 7 días</Link>
-          <Link className="underline" href={`/informes?desde=${hoy.slice(0, 8)}01&hasta=${hoy}${uSel && esAdmin ? `&u=${uSel}` : ""}`}>Este mes</Link>
+          <Link className="underline" href={`/informes?desde=${hoy}&hasta=${hoy}${qs()}`}>Hoy</Link>
+          <Link className="underline" href={`/informes?desde=${sumarDias(hoy, -1)}&hasta=${sumarDias(hoy, -1)}${qs()}`}>Ayer</Link>
+          <Link className="underline" href={`/informes?desde=${sumarDias(hoy, -6)}&hasta=${hoy}${qs()}`}>Últimos 7 días</Link>
+          <Link className="underline" href={`/informes?desde=${hoy.slice(0, 8)}01&hasta=${hoy}${qs()}`}>Este mes</Link>
         </span>
       </form>
 
+      {rSel && <p className="no-print rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">Filtrado por responsable: solo se cuentan las actividades vinculadas a oportunidades de <b>{nombreResp}</b> (las que no tienen proyecto asociado no aparecen) y sus oportunidades nuevas y conseguidas. <Link className="underline" href={`/informes?desde=${desde}&hasta=${hasta}${uSel && esAdmin ? `&u=${uSel}` : ""}`}>Quitar filtro</Link></p>}
       <div className="card"><h2 className="mb-2 font-bold text-navy">Resumen general</h2><ResumenTiempos acts={acts} /></div>
 
       <div className="card space-y-3">
@@ -150,7 +161,7 @@ export default async function Page({ searchParams }: { searchParams: { desde?: s
                 <th className="th text-right">Personas</th><th className="th text-right">Contactos nuevos</th><th className="th text-right">Opps. nuevas</th><th className="th text-right">Ofertas</th><th className="th text-right">Conseguidas</th></tr></thead>
               <tbody>{porUsuario.map(({ id, l }) => (
                 <tr key={id}>
-                  <td className="td"><Link className="text-navy underline" href={`/informes?desde=${desde}&hasta=${hasta}&u=${id}`}>{nombre(id)}</Link></td>
+                  <td className="td"><Link className="text-navy underline" href={`/informes?desde=${desde}&hasta=${hasta}${qs(id)}`}>{nombre(id)}</Link></td>
                   <td className="td text-right">{l.length}</td><td className="td text-right font-semibold">{horas(minutos(l))}</td>
                   {GRUPOS_ACT.map((g) => { const x = l.filter((a) => grupo(a.tipo) === g); return <td key={g} className="td text-right text-xs">{x.length ? `${horas(minutos(x))} (${x.length})` : "—"}</td>; })}
                   <td className="td text-right">{new Set(l.flatMap((a) => (a.personas ?? []).map((p: any) => p.contacto?.id))).size}</td>
