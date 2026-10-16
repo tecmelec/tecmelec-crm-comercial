@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { ETAPAS, PRIORIDADES, prioNombre, TIPOS_ACTIVO, GO_NOGO, ESTADOS_SEGUIMIENTO, ESTADOS_DOC, ORIGENES } from "@/lib/constantes";
@@ -33,7 +33,10 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
     const sb = supabaseBrowser();
     const payload: any = { ...o };
     ["id", "created_at", "updated_at", "paquete_meur", "potencial_meur", "updated_by"].forEach((k) => delete payload[k]);
-    ["empresa_id", "promotor_id", "contacto_id", "responsable_id", "fecha_proxima_accion", "fecha_est_adjudicacion", "fecha_firma", "fecha_ultimo_contacto", "fecha_info"].forEach((k) => { if (payload[k] === "") payload[k] = null; });
+    ["empresa_id", "promotor_id", "contacto_id", "responsable_id", "fecha_proxima_accion", "fecha_est_adjudicacion", "fecha_firma", "fecha_ultimo_contacto", "fecha_info", "fecha_inicio_aprox"].forEach((k) => { if (payload[k] === "") payload[k] = null; });
+    // El campo «Fecha de firma» ya no se muestra: se rellena solo al pasar a «9. Contrato firmado»
+    // para que el plan semanal y los informes sigan contando el contrato.
+    if (payload.etapa === "9" && !payload.fecha_firma) payload.fecha_firma = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
     if (nueva) {
       if (!payload.codigo) {
         const { data: ult } = await sb.from("crm_oportunidades").select("codigo").like("codigo", "OP-%").order("codigo", { ascending: false }).limit(1);
@@ -84,15 +87,16 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
       <div className="card grid grid-cols-2 gap-3 md:grid-cols-4">
         <h3 className="col-span-2 font-bold text-navy md:col-span-4">Cifras (M€)</h3>
         <div><label className="lbl">Base obra (M€)</label><input className="inp" value={o.base_obra_meur ?? ""} onChange={(e) => set("base_obra_meur", num(e.target.value))} /></div>
-        <div><label className="lbl">% eléctrico (0–1)</label><input className="inp" value={o.pct_electrico ?? ""} onChange={(e) => set("pct_electrico", num(e.target.value))} /></div>
-        <div><label className="lbl">% captable (0–1)</label><input className="inp" value={o.pct_captable ?? ""} onChange={(e) => set("pct_captable", num(e.target.value))} /></div>
+        <div><label className="lbl">% Instalaciones (0–100)</label><PctInput value={o.pct_electrico} onChange={(v) => set("pct_electrico", v)} /></div>
+        <div><label className="lbl">% captable (0–100)</label><PctInput value={o.pct_captable} onChange={(v) => set("pct_captable", v)} /></div>
         <div className="text-sm"><div className="lbl">Paquete / potencial (calc.)</div>{meur(paquete)} / <b>{meur(potencial)}</b></div>
-        <div><label className="lbl">Prob. de RFQ (0–1)</label><input className="inp" value={o.prob_rfq ?? ""} onChange={(e) => set("prob_rfq", num(e.target.value))} /></div>
+        <div><label className="lbl">Nro. Oferta</label><input className="inp" value={o.num_oferta ?? ""} onChange={(e) => set("num_oferta", e.target.value || null)} /></div>
         <div><label className="lbl">Importe ofertado (M€)</label><input className="inp" value={o.importe_ofertado_meur ?? ""} onChange={(e) => set("importe_ofertado_meur", num(e.target.value))} /></div>
-        <div><label className="lbl">Prob. adjudicación (0–1)</label><input className="inp" value={o.prob_adjudicacion ?? ""} onChange={(e) => set("prob_adjudicacion", num(e.target.value))} /></div>
+        <div><label className="lbl">Prob. adjudicación (0–100)</label><PctInput value={o.prob_adjudicacion} onChange={(v) => set("prob_adjudicacion", v)} /></div>
+        <div><label className="lbl">Fecha aprox. inicio</label><input type="date" className="inp" value={o.fecha_inicio_aprox ?? ""} onChange={(e) => set("fecha_inicio_aprox", e.target.value)} /></div>
+        <div><label className="lbl">Tiempo de ejecución (meses)</label><NumInput value={o.plazo_ejecucion_meses} onChange={(v) => set("plazo_ejecucion_meses", v)} /></div>
         <div><label className="lbl">Fecha est. adjudicación</label><input type="date" className="inp" value={o.fecha_est_adjudicacion ?? ""} onChange={(e) => set("fecha_est_adjudicacion", e.target.value)} /></div>
         <div><label className="lbl">Importe contratado (M€)</label><input className="inp" value={o.importe_contratado_meur ?? ""} onChange={(e) => set("importe_contratado_meur", num(e.target.value))} /></div>
-        <div><label className="lbl">Fecha de firma</label><input type="date" className="inp" value={o.fecha_firma ?? ""} onChange={(e) => set("fecha_firma", e.target.value)} /></div>
         <div className="col-span-2"><label className="lbl">Motivo de pérdida / descarte</label><input className="inp" value={o.motivo_perdida ?? ""} onChange={(e) => set("motivo_perdida", e.target.value)} /></div>
       </div>
 
@@ -134,3 +138,26 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
     </div>
   );
 }
+
+/** Número decimal (admite coma). Con factor=100 se escribe de 0 a 100 y se guarda como fracción 0–1,
+ *  así los cálculos de paquete, potencial y previsión no cambian. */
+function NumInput({ value, onChange, factor = 1, max }: { value: number | null | undefined; onChange: (v: number | null) => void; factor?: number; max?: number }) {
+  const aTexto = (v: any) => (v === null || v === undefined || v === "" ? "" : String(Math.round(Number(v) * factor * 1e4) / 1e4).replace(".", ","));
+  const [txt, setTxt] = useState(aTexto(value));
+  const n = (t: string) => Number(t.replace(",", "."));
+  useEffect(() => {
+    const actual = txt === "" ? null : n(txt) / factor;
+    if (actual !== (value ?? null)) setTxt(aTexto(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  const valido = (t: string) => !isNaN(n(t)) && n(t) >= 0 && (max === undefined || n(t) <= max);
+  const malo = txt !== "" && !valido(txt);
+  return (
+    <input className={`inp ${malo ? "border-red-500" : ""}`} inputMode="decimal" value={txt} title={malo ? `Escribe un número${max !== undefined ? ` entre 0 y ${max}` : ""}` : undefined}
+      onChange={(e) => {
+        const t = e.target.value.replace("%", "").trim(); setTxt(t);
+        if (t === "") onChange(null); else if (valido(t)) onChange(n(t) / factor);
+      }} />
+  );
+}
+const PctInput = (p: { value: number | null | undefined; onChange: (v: number | null) => void }) => <NumInput {...p} factor={100} max={100} />;
