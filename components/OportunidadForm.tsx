@@ -21,7 +21,6 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const set = (k: string, v: any) => setO((x: any) => ({ ...x, [k]: v }));
-  const num = (v: string) => (v === "" ? null : Number(String(v).replace(",", ".")));
   const goOk = GO_NOGO.every((g) => o.go_nogo?.[g.k]);
   const etapaNum = Number(o.etapa);
   const avisoGo = !isNaN(etapaNum) && etapaNum >= 5 && !goOk;
@@ -86,17 +85,17 @@ export default function OportunidadForm({ opp, empresas, contactos, usuarios, nu
 
       <div className="card grid grid-cols-2 gap-3 md:grid-cols-4">
         <h3 className="col-span-2 font-bold text-navy md:col-span-4">Cifras (M€)</h3>
-        <div><label className="lbl">Base obra (M€)</label><input className="inp" value={o.base_obra_meur ?? ""} onChange={(e) => set("base_obra_meur", num(e.target.value))} /></div>
+        <div><label className="lbl">Base obra (M€)</label><NumInput value={o.base_obra_meur} onChange={(v) => set("base_obra_meur", v)} /></div>
         <div><label className="lbl">% Instalaciones (0–100)</label><PctInput value={o.pct_electrico} onChange={(v) => set("pct_electrico", v)} /></div>
         <div><label className="lbl">% captable (0–100)</label><PctInput value={o.pct_captable} onChange={(v) => set("pct_captable", v)} /></div>
         <div className="text-sm"><div className="lbl">Paquete / potencial (calc.)</div>{meur(paquete)} / <b>{meur(potencial)}</b></div>
         <div><label className="lbl">Nro. Oferta</label><input className="inp" value={o.num_oferta ?? ""} onChange={(e) => set("num_oferta", e.target.value || null)} /></div>
-        <div><label className="lbl">Importe ofertado (M€)</label><input className="inp" value={o.importe_ofertado_meur ?? ""} onChange={(e) => set("importe_ofertado_meur", num(e.target.value))} /></div>
+        <div><label className="lbl">Importe ofertado (M€)</label><NumInput value={o.importe_ofertado_meur} onChange={(v) => set("importe_ofertado_meur", v)} /></div>
         <div><label className="lbl">Prob. adjudicación (0–100)</label><PctInput value={o.prob_adjudicacion} onChange={(v) => set("prob_adjudicacion", v)} /></div>
         <div><label className="lbl">Fecha aprox. inicio</label><input type="date" className="inp" value={o.fecha_inicio_aprox ?? ""} onChange={(e) => set("fecha_inicio_aprox", e.target.value)} /></div>
         <div><label className="lbl">Tiempo de ejecución (meses)</label><NumInput value={o.plazo_ejecucion_meses} onChange={(v) => set("plazo_ejecucion_meses", v)} /></div>
         <div><label className="lbl">Fecha est. adjudicación</label><input type="date" className="inp" value={o.fecha_est_adjudicacion ?? ""} onChange={(e) => set("fecha_est_adjudicacion", e.target.value)} /></div>
-        <div><label className="lbl">Importe contratado (M€)</label><input className="inp" value={o.importe_contratado_meur ?? ""} onChange={(e) => set("importe_contratado_meur", num(e.target.value))} /></div>
+        <div><label className="lbl">Importe contratado (M€)</label><NumInput value={o.importe_contratado_meur} onChange={(v) => set("importe_contratado_meur", v)} /></div>
         <div className="col-span-2"><label className="lbl">Motivo de pérdida / descarte</label><input className="inp" value={o.motivo_perdida ?? ""} onChange={(e) => set("motivo_perdida", e.target.value)} /></div>
       </div>
 
